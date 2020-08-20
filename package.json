@@ -1,0 +1,24 @@
+{
+  "name": "combinegpx",
+  "version": "0.0.0",
+  "description": "Combines gpx files",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Corey Haines",
+  "scripts": {
+    "dev": "parcel --out-dir dev-output src/index.html",
+    "build": "parcel build --out-dir docs src/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coreyhaines/combinegpx.git"
+  },
+  "devDependencies": {
+    "elm-hot": "^1.1.5",
+    "node-elm-compiler": "^5.0.5"
+  },
+  "dependencies": {
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-inline-source": "^1.0.0"
+  }
+}
