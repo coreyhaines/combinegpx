@@ -7,7 +7,7 @@
   "author": "Corey Haines",
   "scripts": {
     "dev": "parcel --out-dir dev-output src/index.html",
-    "build": "parcel build --out-dir docs src/index.html"
+    "build": "rm docs/*.js docs/*.js.map && parcel build --out-dir docs src/index.html"
   },
   "repository": {
     "type": "git",
