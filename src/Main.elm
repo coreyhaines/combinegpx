@@ -22,7 +22,6 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
-import Html.Attributes exposing (style)
 
 
 
@@ -73,15 +72,21 @@ view _ =
 buttonView : String -> Element Message
 buttonView label =
     Input.button
-        [ Background.color (rgb255 0 0 238)
-        , Border.width 1
-        , Border.rounded 10
-        , padding 5
+        [ padding 20
+        , Border.width 2
+        , Border.rounded 16
+        , Border.color <| rgb255 0x50 0x50 0x50
+        , Border.shadow { offset = ( 4, 4 ), size = 3, blur = 10, color = rgb255 0xD0 0xD0 0xD0 }
+        , Background.color <| rgb255 114 159 207
+        , Font.color <| rgb255 0xFF 0xFF 0xFF
+        , mouseOver
+            [ Background.color <| rgb255 0xFF 0xFF 0xFF, Font.color <| rgb255 0 0 0 ]
+        , focused
+            [ Border.shadow { offset = ( 4, 4 ), size = 3, blur = 10, color = rgb255 114 159 207 } ]
         , centerX
         ]
         { onPress = Nothing
-        , label =
-            el [ Font.color (Element.rgb255 255 255 255) ] <| text label
+        , label = text label
         }
 
 
