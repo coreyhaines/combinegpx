@@ -187,7 +187,7 @@ bodyView model =
 type Message
     = AddFilesButtonPressed
     | FilesSelected File.File (List File.File)
-    | FileContentsLoaded String String
+    | GpxFileParsed String String
 
 
 
@@ -214,13 +214,32 @@ update message model =
                     |> List.filter (not << isParsed)
                     |> List.map
                         (\getContentsOfThisFile ->
-                            Task.perform (FileContentsLoaded <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
+                            Task.perform (GpxFileParsed <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
                         )
                 )
             )
 
-        FileContentsLoaded fileName contents ->
-            ( model, Cmd.none )
+        GpxFileParsed fileName contents ->
+            let
+                parsedFiles =
+                    List.map
+                        (\file ->
+                            if gpxFileName file == fileName then
+                                case GpxFile.parseGpxData contents of
+                                    Just gpxFile ->
+                                        Parsed (rawFile file) gpxFile
+
+                                    Nothing ->
+                                        file
+
+                            else
+                                file
+                        )
+                        model.selectedFiles
+            in
+            ( { model | selectedFiles = parsedFiles }
+            , Cmd.none
+            )
 
 
 

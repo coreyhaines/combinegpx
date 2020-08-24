@@ -1,4 +1,4 @@
-module GpxFile exposing (GpxFile, TrackPoint, gpxDecoder, trkptLineDecoder, trksegDecoder)
+module GpxFile exposing (GpxFile, TrackPoint, gpxDecoder, parseGpxData, trkptLineDecoder, trksegDecoder)
 
 import Xml.Decode as XmlDecode
 
@@ -16,6 +16,20 @@ type alias GpxFile =
     , time : String
     , trackPoints : List TrackPoint
     }
+
+
+parseGpxData : String -> Maybe GpxFile
+parseGpxData gpxData =
+    let
+        decoded =
+            XmlDecode.decodeString gpxDecoder gpxData
+    in
+    case decoded of
+        Ok gpxFile ->
+            Just gpxFile
+
+        Err _ ->
+            Nothing
 
 
 trkptLineDecoder : XmlDecode.Decoder TrackPoint
