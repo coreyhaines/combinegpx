@@ -29,6 +29,7 @@ import File
 import File.Select
 import GpxFile
 import Html exposing (Html)
+import Task
 
 
 
@@ -46,6 +47,36 @@ type alias Model =
 
 type alias Flags =
     {}
+
+
+isParsed : GpxFile -> Bool
+isParsed file =
+    case file of
+        NotParsed f ->
+            False
+
+        Parsed f _ ->
+            True
+
+
+rawFile : GpxFile -> File.File
+rawFile file =
+    case file of
+        NotParsed f ->
+            f
+
+        Parsed f _ ->
+            f
+
+
+gpxFileName : GpxFile -> String
+gpxFileName file =
+    case file of
+        NotParsed f ->
+            File.name f
+
+        Parsed f _ ->
+            File.name f
 
 
 
@@ -109,16 +140,6 @@ menuView =
         ]
 
 
-gpxFileName : GpxFile -> String
-gpxFileName file =
-    case file of
-        NotParsed f ->
-            File.name f
-
-        Parsed f _ ->
-            File.name f
-
-
 filesView : List GpxFile -> Element Message
 filesView selectedFiles =
     column [ spacing 10 ] <| List.map (gpxFileName >> text) selectedFiles
@@ -166,6 +187,7 @@ bodyView model =
 type Message
     = AddFilesButtonPressed
     | FilesSelected File.File (List File.File)
+    | FileContentsLoaded String String
 
 
 
@@ -181,9 +203,24 @@ update message model =
             )
 
         FilesSelected file files ->
-            ( { model | selectedFiles = List.map NotParsed (file :: files) ++ model.selectedFiles }
-            , Cmd.none
+            let
+                modelWithNewFilesAdded =
+                    { model | selectedFiles = List.map NotParsed (file :: files) ++ model.selectedFiles }
+            in
+            ( modelWithNewFilesAdded
+            , Cmd.batch <|
+                (modelWithNewFilesAdded
+                    |> .selectedFiles
+                    |> List.filter (not << isParsed)
+                    |> List.map
+                        (\getContentsOfThisFile ->
+                            Task.perform (FileContentsLoaded <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
+                        )
+                )
             )
+
+        FileContentsLoaded fileName contents ->
+            ( model, Cmd.none )
 
 
 
