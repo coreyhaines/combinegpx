@@ -27,19 +27,66 @@ import Element.Font as Font
 import Element.Input as Input
 import File
 import File.Select
+import GpxFile
 import Html exposing (Html)
+import Task
 
 
 
 -- MODEL
 
 
+type GpxFile
+    = Parsed File.File GpxFile.GpxFile
+    | NotParsed File.File
+
+
 type alias Model =
-    { selectedFiles : List File.File }
+    { selectedFiles : List GpxFile }
 
 
 type alias Flags =
     {}
+
+
+isParsed : GpxFile -> Bool
+isParsed file =
+    case file of
+        NotParsed f ->
+            False
+
+        Parsed f _ ->
+            True
+
+
+rawFile : GpxFile -> File.File
+rawFile file =
+    case file of
+        NotParsed f ->
+            f
+
+        Parsed f _ ->
+            f
+
+
+gpxActivityName : GpxFile -> String
+gpxActivityName file =
+    case file of
+        NotParsed f ->
+            "Haven't parsed activity data"
+
+        Parsed _ g ->
+            g.name
+
+
+gpxFileName : GpxFile -> String
+gpxFileName file =
+    case file of
+        NotParsed f ->
+            File.name f
+
+        Parsed f _ ->
+            File.name f
 
 
 
@@ -103,12 +150,18 @@ menuView =
         ]
 
 
-filesView : List File.File -> Element Message
+fileView : GpxFile -> Element Message
+fileView selectedFile =
+    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
+
+
+filesView : List GpxFile -> Element Message
 filesView selectedFiles =
-    column [ spacing 10 ] <| List.map (File.name >> text) selectedFiles
+    column [ spacing 10 ] <|
+        List.map fileView selectedFiles
 
 
-fileListView : List File.File -> Element Message
+fileListView : List GpxFile -> Element Message
 fileListView selectedFiles =
     column
         [ height fill
@@ -150,6 +203,7 @@ bodyView model =
 type Message
     = AddFilesButtonPressed
     | FilesSelected File.File (List File.File)
+    | GpxFileParsed String String
 
 
 
@@ -165,7 +219,41 @@ update message model =
             )
 
         FilesSelected file files ->
-            ( { model | selectedFiles = file :: files ++ model.selectedFiles }
+            let
+                modelWithNewFilesAdded =
+                    { model | selectedFiles = List.map NotParsed (file :: files) ++ model.selectedFiles }
+            in
+            ( modelWithNewFilesAdded
+            , Cmd.batch <|
+                (modelWithNewFilesAdded
+                    |> .selectedFiles
+                    |> List.filter (not << isParsed)
+                    |> List.map
+                        (\getContentsOfThisFile ->
+                            Task.perform (GpxFileParsed <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
+                        )
+                )
+            )
+
+        GpxFileParsed fileName contents ->
+            let
+                parsedFiles =
+                    List.map
+                        (\file ->
+                            if gpxFileName file == fileName then
+                                case GpxFile.parseGpxData contents of
+                                    Just gpxFile ->
+                                        Parsed (rawFile file) gpxFile
+
+                                    Nothing ->
+                                        file
+
+                            else
+                                file
+                        )
+                        model.selectedFiles
+            in
+            ( { model | selectedFiles = parsedFiles }
             , Cmd.none
             )
 
