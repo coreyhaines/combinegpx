@@ -2,7 +2,7 @@ module Main exposing (main)
 
 {- Combine GPX Files From Local System
    Tasks Remaining
-   [ ] Set up Layout
+   [x] Set up Layout
 
    [ ] Add Files
    [ ] Remove Files
