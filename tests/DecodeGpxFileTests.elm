@@ -23,10 +23,27 @@ trkptLineDecoder =
         (XmlDecode.stringAttr "lon")
 
 
+trksegDecoder : XmlDecode.Decoder (List TrackPoint)
+trksegDecoder =
+    XmlDecode.path [ "trkpt" ] <| XmlDecode.list trkptLineDecoder
+
+
 suite : Test
 suite =
     describe "Decoding a gpx file's xml"
         [ testDecodingTrackPointLine
+        ]
+
+
+testDecodingTrackSegmentLine : Test
+testDecodingTrackSegmentLine =
+    describe "Decoding trkseg node"
+        [ test "Should get list of TrackPoint" <|
+            \_ ->
+                XmlDecode.decodeString trksegDecoder trksegLine
+                    |> Result.map List.length
+                    |> Result.withDefault -1
+                    |> Expect.equal 2
         ]
 
 
@@ -64,4 +81,14 @@ trkptLine : String
 trkptLine =
     """
 <trkpt lat="42.007962000" lon="-87.665366000"><ele>185.0</ele><time>2020-08-21T19:53:12Z</time></trkpt>
+"""
+
+
+trksegLine : String
+trksegLine =
+    """
+<trkseg>
+    <trkpt lat="42.007962000" lon="-87.665366000"><ele>185.0</ele><time>2020-08-21T19:53:12Z</time></trkpt>
+    <trkpt lat="42.007962000" lon="-87.665366000"><ele>185.0</ele><time>2020-08-21T19:53:25Z</time></trkpt>
+</trkseg>
 """
