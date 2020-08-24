@@ -1,4 +1,4 @@
-module DecodeGpxFileTests exposing (..)
+module DecodeGpxFileTests exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
@@ -32,6 +32,7 @@ suite : Test
 suite =
     describe "Decoding a gpx file's xml"
         [ testDecodingTrackPointLine
+        , testDecodingTrackSegmentLine
         ]
 
 
