@@ -15,7 +15,9 @@ type alias TrackPoint =
 
 
 type alias GpxFile =
-    { trackPoints : List TrackPoint
+    { name : String
+    , time : String
+    , trackPoints : List TrackPoint
     }
 
 
@@ -35,7 +37,9 @@ trksegDecoder =
 
 gpxDecoder : XmlDecode.Decoder GpxFile
 gpxDecoder =
-    XmlDecode.map GpxFile
+    XmlDecode.map3 GpxFile
+        (XmlDecode.path [ "trk", "name" ] <| XmlDecode.single XmlDecode.string)
+        (XmlDecode.path [ "trk", "time" ] <| XmlDecode.single XmlDecode.string)
         (XmlDecode.path [ "trk", "trkseg" ] <| XmlDecode.single trksegDecoder)
 
 
@@ -57,6 +61,18 @@ testDecodingFullGpx =
                     |> Result.map (.trackPoints >> List.length)
                     |> Result.withDefault -1
                     |> Expect.equal 5
+        , test "Decoding name" <|
+            \_ ->
+                XmlDecode.decodeString gpxDecoder exampleGpx
+                    |> Result.map .name
+                    |> Result.withDefault ""
+                    |> Expect.equal "Cycling 8/21/20 2:53 pm"
+        , test "Decoding time" <|
+            \_ ->
+                XmlDecode.decodeString gpxDecoder exampleGpx
+                    |> Result.map .time
+                    |> Result.withDefault ""
+                    |> Expect.equal "2020-08-21T19:53:12Z"
         ]
 
 
