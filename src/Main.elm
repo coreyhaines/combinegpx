@@ -4,7 +4,11 @@ module Main exposing (main)
    Tasks Remaining
    [x] Set up Layout
 
-   [ ] Add Files
+   [x] Add Files
+        [x] React to click
+        [x] Bring up File.Select.files
+        [x] Save the files that were selected
+        [x] Show the files that were selected
    [ ] Remove Files
    [ ] Reorder Files
 
@@ -21,6 +25,8 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import File
+import File.Select
 import Html exposing (Html)
 
 
@@ -28,19 +34,8 @@ import Html exposing (Html)
 -- MODEL
 
 
-type alias Files =
-    List String
-
-
-loadedFiles : Files
-loadedFiles =
-    [ "Monday, August 24 12:30pm"
-    , "Monday, August 24 1:15pm"
-    ]
-
-
 type alias Model =
-    {}
+    { selectedFiles : List File.File }
 
 
 type alias Flags =
@@ -53,7 +48,9 @@ type alias Flags =
 
 init : Flags -> ( Model, Cmd Message )
 init _ =
-    ( Model, Cmd.none )
+    ( { selectedFiles = [] }
+    , Cmd.none
+    )
 
 
 
@@ -61,16 +58,16 @@ init _ =
 
 
 view : Model -> Browser.Document Message
-view _ =
+view model =
     { title = "Combine GPX Files"
     , body =
-        [ bodyView
+        [ bodyView model
         ]
     }
 
 
-buttonView : String -> Element Message
-buttonView label =
+buttonView : Message -> String -> Element Message
+buttonView onPress label =
     Input.button
         [ padding 20
         , Border.width 2
@@ -85,7 +82,7 @@ buttonView label =
             [ Border.shadow { offset = ( 4, 4 ), size = 3, blur = 10, color = rgb255 114 159 207 } ]
         , centerX
         ]
-        { onPress = Nothing
+        { onPress = Just onPress
         , label = text label
         }
 
@@ -100,18 +97,19 @@ menuView =
         , spacing 10
         ]
         [ text "Things We Can Do"
-        , buttonView "Load Files"
-        , buttonView "Export File"
+        , buttonView AddFilesButtonPressed "Load Files"
+
+        --, buttonView "Export File"
         ]
 
 
-filesView : Files -> Element Message
-filesView files =
-    column [ spacing 10 ] <| List.map text files
+filesView : List File.File -> Element Message
+filesView selectedFiles =
+    column [ spacing 10 ] <| List.map (File.name >> text) selectedFiles
 
 
-fileListView : Element Message
-fileListView =
+fileListView : List File.File -> Element Message
+fileListView selectedFiles =
     column
         [ height fill
         , width fill
@@ -121,12 +119,12 @@ fileListView =
         , spacing 40
         ]
         [ el [ centerX ] <| text "Loaded Files"
-        , filesView loadedFiles
+        , filesView selectedFiles
         ]
 
 
-menu : Element Message
-menu =
+titleView : Element Message
+titleView =
     row
         [ width fill
         , padding 20
@@ -136,12 +134,12 @@ menu =
         [ el [ centerX ] <| text "Combine GPX Files" ]
 
 
-bodyView : Html Message
-bodyView =
+bodyView : Model -> Html Message
+bodyView model =
     layout [] <|
         column [ height fill, width fill ] <|
-            [ menu
-            , row [ height fill, width fill ] [ menuView, fileListView ]
+            [ titleView
+            , row [ height fill, width fill ] [ menuView, fileListView model.selectedFiles ]
             ]
 
 
@@ -150,7 +148,8 @@ bodyView =
 
 
 type Message
-    = None
+    = AddFilesButtonPressed
+    | FilesSelected File.File (List File.File)
 
 
 
@@ -159,7 +158,16 @@ type Message
 
 update : Message -> Model -> ( Model, Cmd Message )
 update message model =
-    ( model, Cmd.none )
+    case message of
+        AddFilesButtonPressed ->
+            ( model
+            , File.Select.files [ "text/gpx" ] FilesSelected
+            )
+
+        FilesSelected file files ->
+            ( { model | selectedFiles = file :: files ++ model.selectedFiles }
+            , Cmd.none
+            )
 
 
 
