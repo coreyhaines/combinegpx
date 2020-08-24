@@ -69,6 +69,16 @@ rawFile file =
             f
 
 
+gpxActivityName : GpxFile -> String
+gpxActivityName file =
+    case file of
+        NotParsed f ->
+            "Haven't parsed activity data"
+
+        Parsed _ g ->
+            g.name
+
+
 gpxFileName : GpxFile -> String
 gpxFileName file =
     case file of
@@ -140,9 +150,15 @@ menuView =
         ]
 
 
+fileView : GpxFile -> Element Message
+fileView selectedFile =
+    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
+
+
 filesView : List GpxFile -> Element Message
 filesView selectedFiles =
-    column [ spacing 10 ] <| List.map (gpxFileName >> text) selectedFiles
+    column [ spacing 10 ] <|
+        List.map fileView selectedFiles
 
 
 fileListView : List GpxFile -> Element Message
