@@ -27,6 +27,7 @@ import Element.Font as Font
 import Element.Input as Input
 import File
 import File.Select
+import GpxFile
 import Html exposing (Html)
 
 
@@ -34,8 +35,13 @@ import Html exposing (Html)
 -- MODEL
 
 
+type GpxFile
+    = Parsed File.File GpxFile.GpxFile
+    | NotParsed File.File
+
+
 type alias Model =
-    { selectedFiles : List File.File }
+    { selectedFiles : List GpxFile }
 
 
 type alias Flags =
@@ -103,12 +109,22 @@ menuView =
         ]
 
 
-filesView : List File.File -> Element Message
+gpxFileName : GpxFile -> String
+gpxFileName file =
+    case file of
+        NotParsed f ->
+            File.name f
+
+        Parsed f _ ->
+            File.name f
+
+
+filesView : List GpxFile -> Element Message
 filesView selectedFiles =
-    column [ spacing 10 ] <| List.map (File.name >> text) selectedFiles
+    column [ spacing 10 ] <| List.map (gpxFileName >> text) selectedFiles
 
 
-fileListView : List File.File -> Element Message
+fileListView : List GpxFile -> Element Message
 fileListView selectedFiles =
     column
         [ height fill
@@ -165,7 +181,7 @@ update message model =
             )
 
         FilesSelected file files ->
-            ( { model | selectedFiles = file :: files ++ model.selectedFiles }
+            ( { model | selectedFiles = List.map NotParsed (file :: files) ++ model.selectedFiles }
             , Cmd.none
             )
 
