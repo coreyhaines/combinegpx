@@ -221,15 +221,7 @@ update message model =
                     addNewSelectedFiles (file :: files) model
             in
             ( modelWithNewFilesAdded
-            , Cmd.batch <|
-                (modelWithNewFilesAdded
-                    |> .selectedFiles
-                    |> List.filter (not << isParsed)
-                    |> List.map
-                        (\getContentsOfThisFile ->
-                            Task.perform (GpxFileParsed <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
-                        )
-                )
+            , loadFileContents modelWithNewFilesAdded.selectedFiles
             )
 
         GpxFileParsed fileName contents ->
@@ -238,6 +230,16 @@ update message model =
               }
             , Cmd.none
             )
+
+
+loadFileContents : List SelectedFile -> Cmd Message
+loadFileContents =
+    List.filter (not << isParsed)
+        >> List.map
+            (\getContentsOfThisFile ->
+                Task.perform (GpxFileParsed <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
+            )
+        >> Cmd.batch
 
 
 addNewSelectedFiles : List File.File -> Model -> Model
