@@ -2,7 +2,7 @@ module DecodeGpxFileTests exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
-import GpxFile exposing (GpxFile, TrackPoint, gpxDecoder, trkptLineDecoder)
+import GpxFile exposing (GpxFile, TrackPoint, trkptLineDecoder)
 import Test exposing (..)
 import Xml.Decode as XmlDecode
 
@@ -19,16 +19,16 @@ testDecodingFullGpx : Test
 testDecodingFullGpx =
     test "Decoding the full gpx document" <|
         \_ ->
-            XmlDecode.decodeString gpxDecoder exampleGpx
+            GpxFile.parseGpxData exampleGpx
                 |> Expect.all
-                    [ Result.map (.trackPoints >> List.length)
-                        >> Result.withDefault -1
+                    [ Maybe.map (.trackPoints >> List.length)
+                        >> Maybe.withDefault -1
                         >> Expect.equal 5
-                    , Result.map .name
-                        >> Result.withDefault ""
+                    , Maybe.map .name
+                        >> Maybe.withDefault ""
                         >> Expect.equal "Cycling 8/21/20 2:53 pm"
-                    , Result.map .time
-                        >> Result.withDefault ""
+                    , Maybe.map .time
+                        >> Maybe.withDefault ""
                         >> Expect.equal "2020-08-21T19:53:12Z"
                     ]
 
