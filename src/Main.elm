@@ -12,8 +12,8 @@ module Main exposing (main)
    [ ] Remove Files
    [ ] Reorder Files
 
-   [ ] Parse Files (xml)
-   [ ] Show Parsed Information
+   [x] Parse Files (xml)
+   [x] Show Parsed Information
 
 
    [ ] Export Combined File
