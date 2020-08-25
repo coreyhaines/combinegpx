@@ -19,17 +19,9 @@ type alias GpxFile =
 
 
 parseGpxData : String -> Maybe GpxFile
-parseGpxData gpxData =
-    let
-        decoded =
-            XmlDecode.decodeString gpxDecoder gpxData
-    in
-    case decoded of
-        Ok gpxFile ->
-            Just gpxFile
-
-        Err _ ->
-            Nothing
+parseGpxData =
+    XmlDecode.decodeString gpxDecoder
+        >> Result.toMaybe
 
 
 trkptLineDecoder : XmlDecode.Decoder TrackPoint
