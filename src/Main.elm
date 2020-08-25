@@ -112,9 +112,38 @@ view : Model -> Browser.Document Message
 view model =
     { title = "Combine GPX Files"
     , body =
-        [ bodyView model
+        [ layout [] <|
+            column [ height fill, width fill ] <|
+                [ titleView
+                , row [ height fill, width fill ] [ menuView, fileListView model.selectedFiles ]
+                ]
         ]
     }
+
+
+titleView : Element Message
+titleView =
+    row
+        [ width fill
+        , padding 20
+        , Border.color (rgb 0 0 0)
+        , Border.width 1
+        ]
+        [ el [ centerX ] <| text "Combine GPX Files" ]
+
+
+menuView : Element Message
+menuView =
+    column
+        [ height fill
+        , Border.color (rgb 0 0 0)
+        , Border.width 1
+        , padding 20
+        , spacing 10
+        ]
+        [ text "Things We Can Do"
+        , buttonView AddFilesButtonPressed "Load Files"
+        ]
 
 
 buttonView : Message -> String -> Element Message
@@ -138,31 +167,6 @@ buttonView onPress label =
         }
 
 
-menuView : Element Message
-menuView =
-    column
-        [ height fill
-        , Border.color (rgb 0 0 0)
-        , Border.width 1
-        , padding 20
-        , spacing 10
-        ]
-        [ text "Things We Can Do"
-        , buttonView AddFilesButtonPressed "Load Files"
-        ]
-
-
-fileView : SelectedFile -> Element Message
-fileView selectedFile =
-    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
-
-
-filesView : List SelectedFile -> Element Message
-filesView selectedFiles =
-    column [ spacing 10 ] <|
-        List.map fileView selectedFiles
-
-
 fileListView : List SelectedFile -> Element Message
 fileListView selectedFiles =
     column
@@ -178,24 +182,15 @@ fileListView selectedFiles =
         ]
 
 
-titleView : Element Message
-titleView =
-    row
-        [ width fill
-        , padding 20
-        , Border.color (rgb 0 0 0)
-        , Border.width 1
-        ]
-        [ el [ centerX ] <| text "Combine GPX Files" ]
+filesView : List SelectedFile -> Element Message
+filesView selectedFiles =
+    column [ spacing 10 ] <|
+        List.map fileView selectedFiles
 
 
-bodyView : Model -> Html Message
-bodyView model =
-    layout [] <|
-        column [ height fill, width fill ] <|
-            [ titleView
-            , row [ height fill, width fill ] [ menuView, fileListView model.selectedFiles ]
-            ]
+fileView : SelectedFile -> Element Message
+fileView selectedFile =
+    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
 
 
 
