@@ -2,7 +2,7 @@ module DecodeGpxFileTests exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
-import GpxFile exposing (GpxFile, TrackPoint, gpxDecoder, trkptLineDecoder, trksegDecoder)
+import GpxFile exposing (GpxFile, TrackPoint, gpxDecoder, trkptLineDecoder)
 import Test exposing (..)
 import Xml.Decode as XmlDecode
 
@@ -11,7 +11,6 @@ suite : Test
 suite =
     describe "Decoding a gpx file's xml"
         [ testDecodingTrackPointLine
-        , testDecodingTrackSegmentLine
         , testDecodingFullGpx
         ]
 
@@ -37,18 +36,6 @@ testDecodingFullGpx =
                     |> Result.map .time
                     |> Result.withDefault ""
                     |> Expect.equal "2020-08-21T19:53:12Z"
-        ]
-
-
-testDecodingTrackSegmentLine : Test
-testDecodingTrackSegmentLine =
-    describe "Decoding trkseg node"
-        [ test "Should get list of TrackPoint" <|
-            \_ ->
-                XmlDecode.decodeString trksegDecoder trksegLine
-                    |> Result.map List.length
-                    |> Result.withDefault -1
-                    |> Expect.equal 2
         ]
 
 
@@ -86,16 +73,6 @@ trkptLine : String
 trkptLine =
     """
 <trkpt lat="42.007962000" lon="-87.665366000"><ele>185.0</ele><time>2020-08-21T19:53:12Z</time></trkpt>
-"""
-
-
-trksegLine : String
-trksegLine =
-    """
-<trkseg>
-    <trkpt lat="42.007962000" lon="-87.665366000"><ele>185.0</ele><time>2020-08-21T19:53:12Z</time></trkpt>
-    <trkpt lat="42.007962000" lon="-87.665366000"><ele>185.0</ele><time>2020-08-21T19:53:25Z</time></trkpt>
-</trkseg>
 """
 
 
