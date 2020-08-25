@@ -212,7 +212,7 @@ update message model =
     case message of
         AddFilesButtonPressed ->
             ( model
-            , File.Select.files [ "text/gpx" ] FilesSelected
+            , File.Select.files [] FilesSelected
             )
 
         FilesSelected file files ->
