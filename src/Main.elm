@@ -218,7 +218,7 @@ update message model =
         FilesSelected file files ->
             let
                 modelWithNewFilesAdded =
-                    { model | selectedFiles = List.map NotParsed (file :: files) ++ model.selectedFiles }
+                    addNewSelectedFiles (file :: files) model
             in
             ( modelWithNewFilesAdded
             , Cmd.batch <|
@@ -238,6 +238,11 @@ update message model =
               }
             , Cmd.none
             )
+
+
+addNewSelectedFiles : List File.File -> Model -> Model
+addNewSelectedFiles newFiles model =
+    { model | selectedFiles = List.map NotParsed newFiles ++ model.selectedFiles }
 
 
 setFileParsed : String -> String -> List SelectedFile -> List SelectedFile
