@@ -36,20 +36,20 @@ import Task
 -- MODEL
 
 
-type GpxFile
+type SelectedFile
     = Parsed File.File GpxFile.GpxFile
     | NotParsed File.File
 
 
 type alias Model =
-    { selectedFiles : List GpxFile }
+    { selectedFiles : List SelectedFile }
 
 
 type alias Flags =
     {}
 
 
-isParsed : GpxFile -> Bool
+isParsed : SelectedFile -> Bool
 isParsed file =
     case file of
         NotParsed f ->
@@ -59,7 +59,7 @@ isParsed file =
             True
 
 
-rawFile : GpxFile -> File.File
+rawFile : SelectedFile -> File.File
 rawFile file =
     case file of
         NotParsed f ->
@@ -69,7 +69,7 @@ rawFile file =
             f
 
 
-gpxActivityName : GpxFile -> String
+gpxActivityName : SelectedFile -> String
 gpxActivityName file =
     case file of
         NotParsed f ->
@@ -79,7 +79,7 @@ gpxActivityName file =
             g.name
 
 
-gpxFileName : GpxFile -> String
+gpxFileName : SelectedFile -> String
 gpxFileName file =
     case file of
         NotParsed f ->
@@ -150,18 +150,18 @@ menuView =
         ]
 
 
-fileView : GpxFile -> Element Message
+fileView : SelectedFile -> Element Message
 fileView selectedFile =
     text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
 
 
-filesView : List GpxFile -> Element Message
+filesView : List SelectedFile -> Element Message
 filesView selectedFiles =
     column [ spacing 10 ] <|
         List.map fileView selectedFiles
 
 
-fileListView : List GpxFile -> Element Message
+fileListView : List SelectedFile -> Element Message
 fileListView selectedFiles =
     column
         [ height fill
