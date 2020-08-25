@@ -2,7 +2,7 @@ module DecodeGpxFileTests exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
-import GpxFile exposing (GpxFile, TrackPoint, trkptLineDecoder)
+import GpxFile
 import Test exposing (..)
 import Xml.Decode as XmlDecode
 
@@ -37,7 +37,7 @@ testDecodingTrackPointLine : Test
 testDecodingTrackPointLine =
     test "Decoding trkpt node" <|
         \_ ->
-            XmlDecode.decodeString trkptLineDecoder trkptLine
+            XmlDecode.decodeString GpxFile.trkptLineDecoder trkptLine
                 |> Expect.all
                     [ Result.map .time
                         >> Result.withDefault ""

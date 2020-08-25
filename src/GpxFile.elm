@@ -1,4 +1,4 @@
-module GpxFile exposing (GpxFile, TrackPoint, parseGpxData, trkptLineDecoder)
+module GpxFile exposing (GpxFile, parseGpxData, trkptLineDecoder)
 
 import Xml.Decode as XmlDecode
 
