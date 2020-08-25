@@ -49,13 +49,17 @@ type alias Flags =
     {}
 
 
+
+-- SELECTEDFILE
+
+
 isParsed : SelectedFile -> Bool
 isParsed file =
     case file of
-        NotParsed f ->
+        NotParsed _ ->
             False
 
-        Parsed f _ ->
+        Parsed _ _ ->
             True
 
 
@@ -72,7 +76,7 @@ rawFile file =
 gpxActivityName : SelectedFile -> String
 gpxActivityName file =
     case file of
-        NotParsed f ->
+        NotParsed _ ->
             "Haven't parsed activity data"
 
         Parsed _ g ->
@@ -145,8 +149,6 @@ menuView =
         ]
         [ text "Things We Can Do"
         , buttonView AddFilesButtonPressed "Load Files"
-
-        --, buttonView "Export File"
         ]
 
 
