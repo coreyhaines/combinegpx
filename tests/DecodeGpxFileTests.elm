@@ -17,26 +17,20 @@ suite =
 
 testDecodingFullGpx : Test
 testDecodingFullGpx =
-    describe "Decoding the full gpx document"
-        [ test "Decoding track segments" <|
-            \_ ->
-                XmlDecode.decodeString gpxDecoder exampleGpx
-                    |> Result.map (.trackPoints >> List.length)
-                    |> Result.withDefault -1
-                    |> Expect.equal 5
-        , test "Decoding name" <|
-            \_ ->
-                XmlDecode.decodeString gpxDecoder exampleGpx
-                    |> Result.map .name
-                    |> Result.withDefault ""
-                    |> Expect.equal "Cycling 8/21/20 2:53 pm"
-        , test "Decoding time" <|
-            \_ ->
-                XmlDecode.decodeString gpxDecoder exampleGpx
-                    |> Result.map .time
-                    |> Result.withDefault ""
-                    |> Expect.equal "2020-08-21T19:53:12Z"
-        ]
+    test "Decoding the full gpx document" <|
+        \_ ->
+            XmlDecode.decodeString gpxDecoder exampleGpx
+                |> Expect.all
+                    [ Result.map (.trackPoints >> List.length)
+                        >> Result.withDefault -1
+                        >> Expect.equal 5
+                    , Result.map .name
+                        >> Result.withDefault ""
+                        >> Expect.equal "Cycling 8/21/20 2:53 pm"
+                    , Result.map .time
+                        >> Result.withDefault ""
+                        >> Expect.equal "2020-08-21T19:53:12Z"
+                    ]
 
 
 testDecodingTrackPointLine : Test
