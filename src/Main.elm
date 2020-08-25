@@ -26,6 +26,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import File
+import File.Download
 import File.Select
 import GpxFile
 import Html exposing (Html)
@@ -42,7 +43,9 @@ type SelectedFile
 
 
 type alias Model =
-    { selectedFiles : List SelectedFile }
+    { selectedFiles : List SelectedFile
+    , combinedGpxFile : Maybe GpxFile.GpxFile
+    }
 
 
 type alias Flags =
@@ -76,6 +79,16 @@ rawFile file =
 
         Parsed f _ ->
             f
+
+
+gpxFile : SelectedFile -> Maybe GpxFile.GpxFile
+gpxFile file =
+    case file of
+        NotParsed _ ->
+            Nothing
+
+        Parsed _ g ->
+            Just g
 
 
 gpxActivityName : SelectedFile -> String
@@ -114,7 +127,9 @@ gpxActivityStartTime file =
 
 init : Flags -> ( Model, Cmd Message )
 init _ =
-    ( { selectedFiles = [] }
+    ( { selectedFiles = []
+      , combinedGpxFile = Nothing
+      }
     , Cmd.none
     )
 
@@ -158,6 +173,7 @@ menuView =
         ]
         [ text "Things We Can Do"
         , buttonView AddFilesButtonPressed "Load Files"
+        , buttonView ExportCombined "Download Combined"
         ]
 
 
@@ -216,6 +232,7 @@ type Message
     = AddFilesButtonPressed
     | FilesSelected File.File (List File.File)
     | GpxFileParsed String String
+    | ExportCombined
 
 
 
@@ -240,13 +257,41 @@ update message model =
             )
 
         GpxFileParsed fileName contents ->
-            ( { model
-                | selectedFiles =
+            let
+                updatedFiles =
                     setFileParsed fileName contents model.selectedFiles
                         |> List.sortBy (gpxActivityStartTime >> Maybe.withDefault "")
+            in
+            ( { model
+                | selectedFiles = updatedFiles
+                , combinedGpxFile = combineGpxFiles updatedFiles
               }
             , Cmd.none
             )
+
+        ExportCombined ->
+            let
+                downloadCmd =
+                    model.combinedGpxFile
+                        |> Maybe.map GpxFile.toString
+                        |> Maybe.map (File.Download.string "combined.gpx" "text/gpx")
+                        |> Maybe.withDefault Cmd.none
+            in
+            ( model, downloadCmd )
+
+
+combineGpxFiles : List SelectedFile -> Maybe GpxFile.GpxFile
+combineGpxFiles selectedFiles =
+    let
+        gpxFiles =
+            List.filterMap gpxFile selectedFiles
+
+        combinedTrackPoints =
+            gpxFiles
+                |> List.concatMap .trackPoints
+    in
+    List.head gpxFiles
+        |> Maybe.map (\g -> { g | trackPoints = combinedTrackPoints })
 
 
 loadFileContents : List SelectedFile -> Cmd Message
@@ -279,8 +324,8 @@ setFileParsed fileName contents selectedFiles =
         (\file ->
             if gpxFileName file == fileName then
                 case GpxFile.parseGpxData contents of
-                    Just gpxFile ->
-                        Parsed (rawFile file) gpxFile
+                    Just g ->
+                        Parsed (rawFile file) g
 
                     Nothing ->
                         file
