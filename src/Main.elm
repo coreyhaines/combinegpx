@@ -63,6 +63,11 @@ isParsed file =
             True
 
 
+rawFileName : SelectedFile -> String
+rawFileName =
+    rawFile >> File.name
+
+
 rawFile : SelectedFile -> File.File
 rawFile file =
     case file of
@@ -91,6 +96,16 @@ gpxFileName file =
 
         Parsed f _ ->
             File.name f
+
+
+gpxActivityStartTime : SelectedFile -> Maybe String
+gpxActivityStartTime file =
+    case file of
+        NotParsed _ ->
+            Nothing
+
+        Parsed _ g ->
+            Just g.time
 
 
 
@@ -226,7 +241,9 @@ update message model =
 
         GpxFileParsed fileName contents ->
             ( { model
-                | selectedFiles = setFileParsed fileName contents model.selectedFiles
+                | selectedFiles =
+                    setFileParsed fileName contents model.selectedFiles
+                        |> List.sortBy (gpxActivityStartTime >> Maybe.withDefault "")
               }
             , Cmd.none
             )
@@ -244,7 +261,16 @@ loadFileContents =
 
 addNewSelectedFiles : List File.File -> Model -> Model
 addNewSelectedFiles newFiles model =
-    { model | selectedFiles = List.map NotParsed newFiles ++ model.selectedFiles }
+    let
+        existingFileNames =
+            model.selectedFiles |> List.map rawFileName
+
+        filesToAdd =
+            newFiles
+                |> List.filter (\file -> not <| List.member (File.name file) existingFileNames)
+                |> List.map NotParsed
+    in
+    { model | selectedFiles = filesToAdd }
 
 
 setFileParsed : String -> String -> List SelectedFile -> List SelectedFile
