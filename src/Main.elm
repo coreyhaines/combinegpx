@@ -233,26 +233,29 @@ update message model =
             )
 
         GpxFileParsed fileName contents ->
-            let
-                parsedFiles =
-                    List.map
-                        (\file ->
-                            if gpxFileName file == fileName then
-                                case GpxFile.parseGpxData contents of
-                                    Just gpxFile ->
-                                        Parsed (rawFile file) gpxFile
-
-                                    Nothing ->
-                                        file
-
-                            else
-                                file
-                        )
-                        model.selectedFiles
-            in
-            ( { model | selectedFiles = parsedFiles }
+            ( { model
+                | selectedFiles = setFileParsed fileName contents model.selectedFiles
+              }
             , Cmd.none
             )
+
+
+setFileParsed : String -> String -> List SelectedFile -> List SelectedFile
+setFileParsed fileName contents selectedFiles =
+    List.map
+        (\file ->
+            if gpxFileName file == fileName then
+                case GpxFile.parseGpxData contents of
+                    Just gpxFile ->
+                        Parsed (rawFile file) gpxFile
+
+                    Nothing ->
+                        file
+
+            else
+                file
+        )
+        selectedFiles
 
 
 
