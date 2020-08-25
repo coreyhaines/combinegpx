@@ -12,8 +12,8 @@ module Main exposing (main)
    [ ] Remove Files
    [ ] Reorder Files
 
-   [ ] Parse Files (xml)
-   [ ] Show Parsed Information
+   [x] Parse Files (xml)
+   [x] Show Parsed Information
 
 
    [ ] Export Combined File
@@ -36,30 +36,34 @@ import Task
 -- MODEL
 
 
-type GpxFile
+type SelectedFile
     = Parsed File.File GpxFile.GpxFile
     | NotParsed File.File
 
 
 type alias Model =
-    { selectedFiles : List GpxFile }
+    { selectedFiles : List SelectedFile }
 
 
 type alias Flags =
     {}
 
 
-isParsed : GpxFile -> Bool
+
+-- SELECTEDFILE
+
+
+isParsed : SelectedFile -> Bool
 isParsed file =
     case file of
-        NotParsed f ->
+        NotParsed _ ->
             False
 
-        Parsed f _ ->
+        Parsed _ _ ->
             True
 
 
-rawFile : GpxFile -> File.File
+rawFile : SelectedFile -> File.File
 rawFile file =
     case file of
         NotParsed f ->
@@ -69,17 +73,17 @@ rawFile file =
             f
 
 
-gpxActivityName : GpxFile -> String
+gpxActivityName : SelectedFile -> String
 gpxActivityName file =
     case file of
-        NotParsed f ->
+        NotParsed _ ->
             "Haven't parsed activity data"
 
         Parsed _ g ->
             g.name
 
 
-gpxFileName : GpxFile -> String
+gpxFileName : SelectedFile -> String
 gpxFileName file =
     case file of
         NotParsed f ->
@@ -108,9 +112,38 @@ view : Model -> Browser.Document Message
 view model =
     { title = "Combine GPX Files"
     , body =
-        [ bodyView model
+        [ layout [] <|
+            column [ height fill, width fill ] <|
+                [ titleView
+                , row [ height fill, width fill ] [ menuView, fileListView model.selectedFiles ]
+                ]
         ]
     }
+
+
+titleView : Element Message
+titleView =
+    row
+        [ width fill
+        , padding 20
+        , Border.color (rgb 0 0 0)
+        , Border.width 1
+        ]
+        [ el [ centerX ] <| text "Combine GPX Files" ]
+
+
+menuView : Element Message
+menuView =
+    column
+        [ height fill
+        , Border.color (rgb 0 0 0)
+        , Border.width 1
+        , padding 20
+        , spacing 10
+        ]
+        [ text "Things We Can Do"
+        , buttonView AddFilesButtonPressed "Load Files"
+        ]
 
 
 buttonView : Message -> String -> Element Message
@@ -134,34 +167,7 @@ buttonView onPress label =
         }
 
 
-menuView : Element Message
-menuView =
-    column
-        [ height fill
-        , Border.color (rgb 0 0 0)
-        , Border.width 1
-        , padding 20
-        , spacing 10
-        ]
-        [ text "Things We Can Do"
-        , buttonView AddFilesButtonPressed "Load Files"
-
-        --, buttonView "Export File"
-        ]
-
-
-fileView : GpxFile -> Element Message
-fileView selectedFile =
-    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
-
-
-filesView : List GpxFile -> Element Message
-filesView selectedFiles =
-    column [ spacing 10 ] <|
-        List.map fileView selectedFiles
-
-
-fileListView : List GpxFile -> Element Message
+fileListView : List SelectedFile -> Element Message
 fileListView selectedFiles =
     column
         [ height fill
@@ -176,24 +182,15 @@ fileListView selectedFiles =
         ]
 
 
-titleView : Element Message
-titleView =
-    row
-        [ width fill
-        , padding 20
-        , Border.color (rgb 0 0 0)
-        , Border.width 1
-        ]
-        [ el [ centerX ] <| text "Combine GPX Files" ]
+filesView : List SelectedFile -> Element Message
+filesView selectedFiles =
+    column [ spacing 10 ] <|
+        List.map fileView selectedFiles
 
 
-bodyView : Model -> Html Message
-bodyView model =
-    layout [] <|
-        column [ height fill, width fill ] <|
-            [ titleView
-            , row [ height fill, width fill ] [ menuView, fileListView model.selectedFiles ]
-            ]
+fileView : SelectedFile -> Element Message
+fileView selectedFile =
+    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
 
 
 
@@ -215,47 +212,57 @@ update message model =
     case message of
         AddFilesButtonPressed ->
             ( model
-            , File.Select.files [ "text/gpx" ] FilesSelected
+            , File.Select.files [] FilesSelected
             )
 
         FilesSelected file files ->
             let
                 modelWithNewFilesAdded =
-                    { model | selectedFiles = List.map NotParsed (file :: files) ++ model.selectedFiles }
+                    addNewSelectedFiles (file :: files) model
             in
             ( modelWithNewFilesAdded
-            , Cmd.batch <|
-                (modelWithNewFilesAdded
-                    |> .selectedFiles
-                    |> List.filter (not << isParsed)
-                    |> List.map
-                        (\getContentsOfThisFile ->
-                            Task.perform (GpxFileParsed <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
-                        )
-                )
+            , loadFileContents modelWithNewFilesAdded.selectedFiles
             )
 
         GpxFileParsed fileName contents ->
-            let
-                parsedFiles =
-                    List.map
-                        (\file ->
-                            if gpxFileName file == fileName then
-                                case GpxFile.parseGpxData contents of
-                                    Just gpxFile ->
-                                        Parsed (rawFile file) gpxFile
-
-                                    Nothing ->
-                                        file
-
-                            else
-                                file
-                        )
-                        model.selectedFiles
-            in
-            ( { model | selectedFiles = parsedFiles }
+            ( { model
+                | selectedFiles = setFileParsed fileName contents model.selectedFiles
+              }
             , Cmd.none
             )
+
+
+loadFileContents : List SelectedFile -> Cmd Message
+loadFileContents =
+    List.filter (not << isParsed)
+        >> List.map
+            (\getContentsOfThisFile ->
+                Task.perform (GpxFileParsed <| gpxFileName getContentsOfThisFile) (File.toString <| rawFile getContentsOfThisFile)
+            )
+        >> Cmd.batch
+
+
+addNewSelectedFiles : List File.File -> Model -> Model
+addNewSelectedFiles newFiles model =
+    { model | selectedFiles = List.map NotParsed newFiles ++ model.selectedFiles }
+
+
+setFileParsed : String -> String -> List SelectedFile -> List SelectedFile
+setFileParsed fileName contents selectedFiles =
+    List.map
+        (\file ->
+            if gpxFileName file == fileName then
+                case GpxFile.parseGpxData contents of
+                    Just gpxFile ->
+                        Parsed (rawFile file) gpxFile
+
+                    Nothing ->
+                        file
+
+            else
+                file
+        )
+        selectedFiles
 
 
 

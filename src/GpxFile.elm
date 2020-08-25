@@ -1,4 +1,4 @@
-module GpxFile exposing (GpxFile, TrackPoint, gpxDecoder, parseGpxData, trkptLineDecoder, trksegDecoder)
+module GpxFile exposing (GpxFile, parseGpxData, trkptLineDecoder)
 
 import Xml.Decode as XmlDecode
 
@@ -19,17 +19,22 @@ type alias GpxFile =
 
 
 parseGpxData : String -> Maybe GpxFile
-parseGpxData gpxData =
-    let
-        decoded =
-            XmlDecode.decodeString gpxDecoder gpxData
-    in
-    case decoded of
-        Ok gpxFile ->
-            Just gpxFile
+parseGpxData =
+    XmlDecode.decodeString gpxDecoder
+        >> Result.toMaybe
 
-        Err _ ->
-            Nothing
+
+gpxDecoder : XmlDecode.Decoder GpxFile
+gpxDecoder =
+    XmlDecode.map3 GpxFile
+        (XmlDecode.path [ "trk", "name" ] <| XmlDecode.single XmlDecode.string)
+        (XmlDecode.path [ "trk", "time" ] <| XmlDecode.single XmlDecode.string)
+        (XmlDecode.path [ "trk", "trkseg" ] <| XmlDecode.single trksegDecoder)
+
+
+trksegDecoder : XmlDecode.Decoder (List TrackPoint)
+trksegDecoder =
+    XmlDecode.path [ "trkpt" ] <| XmlDecode.list trkptLineDecoder
 
 
 trkptLineDecoder : XmlDecode.Decoder TrackPoint
@@ -39,16 +44,3 @@ trkptLineDecoder =
         (XmlDecode.path [ "time" ] <| XmlDecode.single XmlDecode.string)
         (XmlDecode.stringAttr "lat")
         (XmlDecode.stringAttr "lon")
-
-
-trksegDecoder : XmlDecode.Decoder (List TrackPoint)
-trksegDecoder =
-    XmlDecode.path [ "trkpt" ] <| XmlDecode.list trkptLineDecoder
-
-
-gpxDecoder : XmlDecode.Decoder GpxFile
-gpxDecoder =
-    XmlDecode.map3 GpxFile
-        (XmlDecode.path [ "trk", "name" ] <| XmlDecode.single XmlDecode.string)
-        (XmlDecode.path [ "trk", "time" ] <| XmlDecode.single XmlDecode.string)
-        (XmlDecode.path [ "trk", "trkseg" ] <| XmlDecode.single trksegDecoder)
