@@ -35,32 +35,23 @@ testDecodingFullGpx =
 
 testDecodingTrackPointLine : Test
 testDecodingTrackPointLine =
-    describe "Decoding trkpt node"
-        [ test "Decoding time" <|
-            \_ ->
-                XmlDecode.decodeString trkptLineDecoder trkptLine
-                    |> Result.map .time
-                    |> Result.withDefault ""
-                    |> Expect.equal "2020-08-21T19:53:12Z"
-        , test "Decoding elevation" <|
-            \_ ->
-                XmlDecode.decodeString trkptLineDecoder trkptLine
-                    |> Result.map .elevation
-                    |> Result.withDefault ""
-                    |> Expect.equal "185.0"
-        , test "Decoding latitude" <|
-            \_ ->
-                XmlDecode.decodeString trkptLineDecoder trkptLine
-                    |> Result.map .latitude
-                    |> Result.withDefault ""
-                    |> Expect.equal "42.007962000"
-        , test "Decoding longitude" <|
-            \_ ->
-                XmlDecode.decodeString trkptLineDecoder trkptLine
-                    |> Result.map .longitude
-                    |> Result.withDefault ""
-                    |> Expect.equal "-87.665366000"
-        ]
+    test "Decoding trkpt node" <|
+        \_ ->
+            XmlDecode.decodeString trkptLineDecoder trkptLine
+                |> Expect.all
+                    [ Result.map .time
+                        >> Result.withDefault ""
+                        >> Expect.equal "2020-08-21T19:53:12Z"
+                    , Result.map .elevation
+                        >> Result.withDefault ""
+                        >> Expect.equal "185.0"
+                    , Result.map .latitude
+                        >> Result.withDefault ""
+                        >> Expect.equal "42.007962000"
+                    , Result.map .longitude
+                        >> Result.withDefault ""
+                        >> Expect.equal "-87.665366000"
+                    ]
 
 
 trkptLine : String
