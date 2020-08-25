@@ -10,13 +10,12 @@ module Main exposing (main)
         [x] Save the files that were selected
         [x] Show the files that were selected
    [ ] Remove Files
-   [ ] Reorder Files
 
    [x] Parse Files (xml)
    [x] Show Parsed Information
 
 
-   [ ] Export Combined File
+   [x] Export Combined File
 -}
 
 import Browser
@@ -159,7 +158,9 @@ titleView =
         , Border.color (rgb 0 0 0)
         , Border.width 1
         ]
-        [ el [ centerX ] <| text "Combine GPX Files" ]
+        [ el [ centerX ] <| text "Combine GPX Files"
+        , el [ alignRight ] <| link [] { url = "https://github.com/coreyhaines/combinegpx/", label = text "github" }
+        ]
 
 
 menuView : Element Message
