@@ -29,5 +29,4 @@ The initial version of the application only understands appending `trkpt` elemen
 - [x] Skeleton Layout
 - [x] Add Files
 - [ ] Remove File
-- [ ] Reorder Files
-- [ ] Download Combined File
+- [x] Download Combined File
