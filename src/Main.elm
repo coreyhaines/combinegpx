@@ -51,6 +51,11 @@ type alias Flags =
     {}
 
 
+hasSelectedFiles : Model -> Bool
+hasSelectedFiles model =
+    List.length model.selectedFiles > 0
+
+
 
 -- SELECTEDFILE
 
@@ -144,7 +149,10 @@ view model =
         [ layout [] <|
             column [ height fill, width fill ] <|
                 [ titleView
-                , row [ height fill, width fill ] [ menuView, fileListView model.selectedFiles ]
+                , row [ height fill, width fill ]
+                    [ menuView model
+                    , fileListView model.selectedFiles
+                    ]
                 ]
         ]
     }
@@ -163,8 +171,19 @@ titleView =
         ]
 
 
-menuView : Element Message
-menuView =
+menuView : Model -> Element Message
+menuView model =
+    let
+        buttons =
+            [ buttonView AddFilesButtonPressed "Load Files" ]
+                |> (\loadFileButton ->
+                        if hasSelectedFiles model then
+                            loadFileButton ++ [ buttonView ExportCombined "Download Combined" ]
+
+                        else
+                            loadFileButton
+                   )
+    in
     column
         [ height fill
         , Border.color (rgb 0 0 0)
@@ -172,10 +191,7 @@ menuView =
         , padding 20
         , spacing 10
         ]
-        [ text "Things We Can Do"
-        , buttonView AddFilesButtonPressed "Load Files"
-        , buttonView ExportCombined "Download Combined"
-        ]
+        ([ text "Things We Can Do" ] ++ buttons)
 
 
 buttonView : Message -> String -> Element Message
