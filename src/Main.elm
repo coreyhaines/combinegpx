@@ -222,7 +222,16 @@ filesView selectedFiles =
 
 fileView : SelectedFile -> Element Message
 fileView selectedFile =
-    text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
+    row [ spacing 5 ]
+        [ Input.button
+            [ padding 5
+            , Font.color <| rgb255 255 0 0
+            ]
+            { onPress = Just <| RemoveSelectedFile <| rawFileName selectedFile
+            , label = text "x"
+            }
+        , text <| gpxFileName selectedFile ++ " - " ++ gpxActivityName selectedFile
+        ]
 
 
 
@@ -234,6 +243,7 @@ type Message
     | FilesSelected File.File (List File.File)
     | GpxFileParsed String String
     | ExportCombined
+    | RemoveSelectedFile String
 
 
 
@@ -280,6 +290,23 @@ update message model =
             in
             ( model, downloadCmd )
 
+        RemoveSelectedFile fileName ->
+            let
+                updatedFiles =
+                    removeFileByName fileName model.selectedFiles
+            in
+            ( { model
+                | selectedFiles = updatedFiles
+                , combinedGpxFile = combineGpxFiles updatedFiles
+              }
+            , Cmd.none
+            )
+
+
+removeFileByName : String -> List SelectedFile -> List SelectedFile
+removeFileByName fileName =
+    List.filter (rawFileName >> (/=) fileName)
+
 
 combineGpxFiles : List SelectedFile -> Maybe GpxFile.GpxFile
 combineGpxFiles selectedFiles =
@@ -316,7 +343,7 @@ addNewSelectedFiles newFiles model =
                 |> List.filter (\file -> not <| List.member (File.name file) existingFileNames)
                 |> List.map NotParsed
     in
-    { model | selectedFiles = filesToAdd }
+    { model | selectedFiles = filesToAdd ++ model.selectedFiles }
 
 
 setFileParsed : String -> String -> List SelectedFile -> List SelectedFile
