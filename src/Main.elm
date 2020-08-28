@@ -157,31 +157,37 @@ gpxActivityStartTime file =
 -- INIT
 
 
+type alias OAuthReturn =
+    { state : Maybe String
+    , code : Maybe String
+    }
+
+
 init : Flags -> Url -> Key -> ( Model, Cmd Message )
 init _ url key =
     let
-        stateValueParser =
-            Url.Parser.query <| Url.Parser.Query.string "state"
-
-        codeValueParser =
-            Url.Parser.query <| Url.Parser.Query.string "code"
-
-        stateValue =
-            Url.Parser.parse
+        oAuthReturnParser : Url.Parser.Query.Parser OAuthReturn
+        oAuthReturnParser =
+            Url.Parser.Query.map2 OAuthReturn
                 stateValueParser
-                url
-                |> Maybe.andThen identity
-                |> Debug.log "STATE"
-
-        codeValue =
-            Url.Parser.parse
                 codeValueParser
+
+        stateValueParser : Url.Parser.Query.Parser (Maybe String)
+        stateValueParser =
+            Url.Parser.Query.string "state"
+
+        codeValueParser : Url.Parser.Query.Parser (Maybe String)
+        codeValueParser =
+            Url.Parser.Query.string "code"
+
+        oAuthReturnValue =
+            Url.Parser.parse
+                (Url.Parser.query <| oAuthReturnParser)
                 url
-                |> Maybe.andThen identity
-                |> Debug.log "CODE"
+                |> Debug.log "oAuthReturn"
     in
-    case stateValue of
-        Just "oAuthReturn" ->
+    case oAuthReturnValue of
+        Just oAuthReturn ->
             let
                 _ =
                     Debug.log "need to request access token" "oAuthReturn"
@@ -194,7 +200,7 @@ init _ url key =
             , Cmd.none
             )
 
-        _ ->
+        Nothing ->
             ( { navigationKey = key
               , selectedFiles = []
               , combinedGpxFile = Nothing
