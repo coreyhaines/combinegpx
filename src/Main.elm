@@ -32,6 +32,7 @@ module Main exposing (main)
 -}
 
 import Browser
+import Browser.Navigation exposing (Key)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -43,6 +44,7 @@ import File.Select
 import GpxFile
 import Html exposing (Html)
 import Task
+import Url exposing (Url)
 
 
 
@@ -142,8 +144,8 @@ gpxActivityStartTime file =
 -- INIT
 
 
-init : Flags -> ( Model, Cmd Message )
-init _ =
+init : Flags -> Url -> Key -> ( Model, Cmd Message )
+init _ _ _ =
     ( { selectedFiles = []
       , combinedGpxFile = Nothing
       }
@@ -270,7 +272,8 @@ fileView selectedFile =
 
 
 type Message
-    = AddFilesButtonPressed
+    = Noop
+    | AddFilesButtonPressed
     | FilesSelected File.File (List File.File)
     | GpxFileParsed String String
     | ExportCombined
@@ -285,6 +288,9 @@ type Message
 update : Message -> Model -> ( Model, Cmd Message )
 update message model =
     case message of
+        Noop ->
+            ( model, Cmd.none )
+
         AddFilesButtonPressed ->
             ( model
             , File.Select.files [] FilesSelected
@@ -335,7 +341,9 @@ update message model =
             )
 
         AuthorizeWithStravaPressed ->
-            ( model, Cmd.none )
+            ( model
+            , Cmd.none
+            )
 
 
 removeFileByName : String -> List SelectedFile -> List SelectedFile
@@ -414,8 +422,10 @@ subscriptions model =
 
 main : Program Flags Model Message
 main =
-    Browser.document
+    Browser.application
         { init = init
+        , onUrlChange = always Noop
+        , onUrlRequest = always Noop
         , view = view
         , update = update
         , subscriptions = subscriptions
