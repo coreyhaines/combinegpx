@@ -74,6 +74,8 @@ type alias OAuthReturn =
 type StravaAuthorization
     = NotAuthorized
     | RetrievingAccessToken OAuthReturn
+    | AccessTokenRetrievalFailure Http.Error
+    | Authorization String
 
 
 type alias Model =
@@ -422,14 +424,16 @@ update message model =
                 _ =
                     Debug.log "AuthorizationCodeReturned Error" error
             in
-            ( model, Cmd.none )
+            ( { model | stravaAuthorization = AccessTokenRetrievalFailure error }
+            , Cmd.none
+            )
 
         AuthorizationCodeReturned (Ok json) ->
             let
                 _ =
                     Debug.log "AuthorizationCodeReturned Ok" json
             in
-            ( model, Cmd.none )
+            ( { model | stravaAuthorization = Authorization json }, Cmd.none )
 
 
 retrieveStravaAccessTokenCmd : ApiClientInfo -> OAuthReturn -> Cmd Message
