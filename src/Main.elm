@@ -27,6 +27,7 @@ module Main exposing (main)
     [ ] if state is oAuthReturn
         [ ] Get "state" query parameter from url
         [ ] Request access token, refresh token, token expiration
+        {"token_type":"Bearer","expires_at":1598660384,"expires_in":11887,"refresh_token":"ddbac8fe95f04c0442c77c095bb34ad855a9ac8d","access_token":"1d1c69552bedfd5bf4126319710e76a6082c55ef","athlete":{"id":61970622,"username":"haines_corey","resource_state":2,"firstname":"Corey","lastname":"Haines","city":"Chicago","state":"Illinois","country":"United States","sex":null,"premium":false,"summit":false,"created_at":"2020-06-21T22:56:43Z","updated_at":"2020-07-01T11:43:34Z","badge_type_id":0,"profile_medium":"https://dgalywyr863hv.cloudfront.net/pictures/athletes/61970622/15851193/4/medium.jpg","profile":"https://dgalywyr863hv.cloudfront.net/pictures/athletes/61970622/15851193/4/large.jpg","friend":null,"follower":null}}
 
     Get Strava Athlete Profile Information
     Tasks
@@ -34,6 +35,7 @@ module Main exposing (main)
     [ ] Display name on screen
 -}
 
+import ApiClientInfo exposing (ApiClientInfo, defaultApiClientInfo)
 import Browser
 import Browser.Navigation exposing (Key)
 import Element exposing (..)
@@ -46,6 +48,7 @@ import File.Download
 import File.Select
 import GpxFile
 import Html exposing (Html)
+import Http
 import Task
 import Url exposing (Url)
 import Url.Builder
@@ -62,9 +65,15 @@ type SelectedFile
     | NotParsed File.File
 
 
+type alias OAuthReturn =
+    { state : Maybe String
+    , code : Maybe String
+    }
+
+
 type StravaAuthorization
     = NotAuthorized
-    | RetrievingAccessToken
+    | RetrievingAccessToken OAuthReturn
 
 
 type alias Model =
@@ -72,6 +81,7 @@ type alias Model =
     , selectedFiles : List SelectedFile
     , combinedGpxFile : Maybe GpxFile.GpxFile
     , stravaAuthorization : StravaAuthorization
+    , apiClient : ApiClientInfo
     }
 
 
@@ -157,12 +167,6 @@ gpxActivityStartTime file =
 -- INIT
 
 
-type alias OAuthReturn =
-    { state : Maybe String
-    , code : Maybe String
-    }
-
-
 init : Flags -> Url -> Key -> ( Model, Cmd Message )
 init _ url key =
     let
@@ -188,23 +192,33 @@ init _ url key =
     in
     case oAuthReturnValue of
         Just oAuthReturn ->
-            let
-                _ =
-                    Debug.log "need to request access token" "oAuthReturn"
-            in
-            ( { navigationKey = key
-              , selectedFiles = []
-              , combinedGpxFile = Nothing
-              , stravaAuthorization = NotAuthorized
-              }
-            , Cmd.none
-            )
+            case oAuthReturn.state of
+                Nothing ->
+                    ( { navigationKey = key
+                      , selectedFiles = []
+                      , combinedGpxFile = Nothing
+                      , stravaAuthorization = NotAuthorized
+                      , apiClient = defaultApiClientInfo
+                      }
+                    , Cmd.none
+                    )
+
+                Just _ ->
+                    ( { navigationKey = key
+                      , selectedFiles = []
+                      , combinedGpxFile = Nothing
+                      , stravaAuthorization = RetrievingAccessToken oAuthReturn
+                      , apiClient = defaultApiClientInfo
+                      }
+                    , retrieveStravaAccessTokenCmd defaultApiClientInfo oAuthReturn
+                    )
 
         Nothing ->
             ( { navigationKey = key
               , selectedFiles = []
               , combinedGpxFile = Nothing
               , stravaAuthorization = NotAuthorized
+              , apiClient = defaultApiClientInfo
               }
             , Cmd.none
             )
@@ -336,6 +350,7 @@ type Message
     | ExportCombined
     | RemoveSelectedFile String
     | AuthorizeWithStravaPressed
+    | AuthorizationCodeReturned (Result Http.Error String)
 
 
 
@@ -402,6 +417,40 @@ update message model =
             , requestAuthorizationCmd model
             )
 
+        AuthorizationCodeReturned (Err error) ->
+            let
+                _ =
+                    Debug.log "AuthorizationCodeReturned Error" error
+            in
+            ( model, Cmd.none )
+
+        AuthorizationCodeReturned (Ok json) ->
+            let
+                _ =
+                    Debug.log "AuthorizationCodeReturned Ok" json
+            in
+            ( model, Cmd.none )
+
+
+retrieveStravaAccessTokenCmd : ApiClientInfo -> OAuthReturn -> Cmd Message
+retrieveStravaAccessTokenCmd { id, secret } { code } =
+    let
+        url =
+            Url.Builder.crossOrigin
+                "https://www.strava.com"
+                [ "oauth", "token" ]
+                [ Url.Builder.string "client_id" id
+                , Url.Builder.string "client_secret" secret
+                , Url.Builder.string "code" (Maybe.withDefault "" code)
+                , Url.Builder.string "grant_type" "authorization_code"
+                ]
+    in
+    Http.post
+        { url = url
+        , body = Http.emptyBody
+        , expect = Http.expectString AuthorizationCodeReturned
+        }
+
 
 requestAuthorizationCmd : Model -> Cmd Message
 requestAuthorizationCmd model =
@@ -410,7 +459,7 @@ requestAuthorizationCmd model =
             Url.Builder.crossOrigin
                 "https://www.strava.com"
                 [ "oauth", "authorize" ]
-                [ Url.Builder.string "client_id" "52927"
+                [ Url.Builder.string "client_id" model.apiClient.id
                 , Url.Builder.string "redirect_uri" "http://localhost:1234/"
                 , Url.Builder.string "response_type" "code"
                 , Url.Builder.string "approval_prompt" "force"
