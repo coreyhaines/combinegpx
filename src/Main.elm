@@ -24,7 +24,9 @@ module Main exposing (main)
     [ ] Handle return w/ authorization code
         http://localhost:1234/?state=oAuthReturn&code=1ac33b2786b0cca5d8a069e48eced95bbe84237f&scope=read
         [ ] Handle failure
-    [ ] Request access token, refresh token, token expiration
+    [ ] if state is oAuthReturn
+        [ ] Get "state" query parameter from url
+        [ ] Request access token, refresh token, token expiration
 
     Get Strava Athlete Profile Information
     Tasks
@@ -47,6 +49,8 @@ import Html exposing (Html)
 import Task
 import Url exposing (Url)
 import Url.Builder
+import Url.Parser
+import Url.Parser.Query
 
 
 
@@ -58,10 +62,16 @@ type SelectedFile
     | NotParsed File.File
 
 
+type StravaAuthorization
+    = NotAuthorized
+    | RetrievingAccessToken
+
+
 type alias Model =
     { navigationKey : Key
     , selectedFiles : List SelectedFile
     , combinedGpxFile : Maybe GpxFile.GpxFile
+    , stravaAuthorization : StravaAuthorization
     }
 
 
@@ -148,13 +158,50 @@ gpxActivityStartTime file =
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Message )
-init _ _ key =
-    ( { navigationKey = key
-      , selectedFiles = []
-      , combinedGpxFile = Nothing
-      }
-    , Cmd.none
-    )
+init _ url key =
+    let
+        stateValueParser =
+            Url.Parser.query <| Url.Parser.Query.string "state"
+
+        codeValueParser =
+            Url.Parser.query <| Url.Parser.Query.string "code"
+
+        stateValue =
+            Url.Parser.parse
+                stateValueParser
+                url
+                |> Maybe.andThen identity
+                |> Debug.log "STATE"
+
+        codeValue =
+            Url.Parser.parse
+                codeValueParser
+                url
+                |> Maybe.andThen identity
+                |> Debug.log "CODE"
+    in
+    case stateValue of
+        Just "oAuthReturn" ->
+            let
+                _ =
+                    Debug.log "need to request access token" "oAuthReturn"
+            in
+            ( { navigationKey = key
+              , selectedFiles = []
+              , combinedGpxFile = Nothing
+              , stravaAuthorization = NotAuthorized
+              }
+            , Cmd.none
+            )
+
+        _ ->
+            ( { navigationKey = key
+              , selectedFiles = []
+              , combinedGpxFile = Nothing
+              , stravaAuthorization = NotAuthorized
+              }
+            , Cmd.none
+            )
 
 
 
