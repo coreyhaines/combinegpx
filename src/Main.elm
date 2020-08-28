@@ -20,8 +20,9 @@ module Main exposing (main)
     oAuth to Strava (http://developers.strava.com/docs/authentication/)
     Tasks
     [x] Add authorization button
-    [ ] Redirect user to strava
+    [x] Redirect user to strava
     [ ] Handle return w/ authorization code
+        http://localhost:1234/?state=oAuthReturn&code=1ac33b2786b0cca5d8a069e48eced95bbe84237f&scope=read
         [ ] Handle failure
     [ ] Request access token, refresh token, token expiration
 
@@ -45,6 +46,7 @@ import GpxFile
 import Html exposing (Html)
 import Task
 import Url exposing (Url)
+import Url.Builder
 
 
 
@@ -57,7 +59,8 @@ type SelectedFile
 
 
 type alias Model =
-    { selectedFiles : List SelectedFile
+    { navigationKey : Key
+    , selectedFiles : List SelectedFile
     , combinedGpxFile : Maybe GpxFile.GpxFile
     }
 
@@ -145,8 +148,9 @@ gpxActivityStartTime file =
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Message )
-init _ _ _ =
-    ( { selectedFiles = []
+init _ _ key =
+    ( { navigationKey = key
+      , selectedFiles = []
       , combinedGpxFile = Nothing
       }
     , Cmd.none
@@ -342,8 +346,26 @@ update message model =
 
         AuthorizeWithStravaPressed ->
             ( model
-            , Cmd.none
+            , requestAuthorizationCmd model
             )
+
+
+requestAuthorizationCmd : Model -> Cmd Message
+requestAuthorizationCmd model =
+    let
+        url =
+            Url.Builder.crossOrigin
+                "https://www.strava.com"
+                [ "oauth", "authorize" ]
+                [ Url.Builder.string "client_id" "52927"
+                , Url.Builder.string "redirect_uri" "http://localhost:1234/"
+                , Url.Builder.string "response_type" "code"
+                , Url.Builder.string "approval_prompt" "force"
+                , Url.Builder.string "scope" "read"
+                , Url.Builder.string "state" "oAuthReturn"
+                ]
+    in
+    Browser.Navigation.load url
 
 
 removeFileByName : String -> List SelectedFile -> List SelectedFile
