@@ -9,13 +9,26 @@ module Main exposing (main)
         [x] Bring up File.Select.files
         [x] Save the files that were selected
         [x] Show the files that were selected
-   [ ] Remove Files
+   [x] Remove Files
 
    [x] Parse Files (xml)
    [x] Show Parsed Information
 
 
    [x] Export Combined File
+
+    oAuth to Strava (http://developers.strava.com/docs/authentication/)
+    Tasks
+    [ ] Add authorization button
+    [ ] Redirect user to strava
+    [ ] Handle return w/ authorization code
+        [ ] Handle failure
+    [ ] Request access token, refresh token, token expiration
+
+    Get Strava Athlete Profile Information
+    Tasks
+    [ ] Request profile information from Strava
+    [ ] Display name on screen
 -}
 
 import Browser
