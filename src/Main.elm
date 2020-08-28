@@ -19,7 +19,7 @@ module Main exposing (main)
 
     oAuth to Strava (http://developers.strava.com/docs/authentication/)
     Tasks
-    [ ] Add authorization button
+    [x] Add authorization button
     [ ] Redirect user to strava
     [ ] Handle return w/ authorization code
         [ ] Handle failure
@@ -188,7 +188,9 @@ menuView : Model -> Element Message
 menuView model =
     let
         buttons =
-            [ buttonView AddFilesButtonPressed "Load Files" ]
+            [ buttonView AuthorizeWithStravaPressed "Strava Login"
+            , buttonView AddFilesButtonPressed "Load Files"
+            ]
                 |> (\loadFileButton ->
                         if hasSelectedFiles model then
                             loadFileButton ++ [ buttonView ExportCombined "Download Combined" ]
@@ -273,6 +275,7 @@ type Message
     | GpxFileParsed String String
     | ExportCombined
     | RemoveSelectedFile String
+    | AuthorizeWithStravaPressed
 
 
 
@@ -330,6 +333,9 @@ update message model =
               }
             , Cmd.none
             )
+
+        AuthorizeWithStravaPressed ->
+            ( model, Cmd.none )
 
 
 removeFileByName : String -> List SelectedFile -> List SelectedFile
